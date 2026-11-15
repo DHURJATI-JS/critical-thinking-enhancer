@@ -1,0 +1,29 @@
+# AMD GPUs via ROCm - LINUX ONLY (Docker Desktop on Windows/macOS cannot expose /dev/kfd).
+# RDNA4 cards (RX 9060 XT / 9070 XT = gfx1200/gfx1201) need a gfx120X build of rocm/vllm:
+# set VLLM_ROCM_IMAGE in .env to the newest "gfx120X-all" tag from https://hub.docker.com/r/rocm/vllm/tags
+x-rocm: &rocm
+  image: ${VLLM_ROCM_IMAGE:-rocm/vllm:latest}
+  entrypoint: ["python3", "-m", "vllm.entrypoints.openai.api_server"]
+  devices:
+    - /dev/kfd
+    - /dev/dri
+  group_add:
+    - video
+  cap_add:
+    - SYS_PTRACE
+  security_opt:
+    - seccomp=unconfined
+  shm_size: 8g
+
+services:
+  qwen-coder:
+    <<: *rocm
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+      VLLM_USE_TRITON_AWQ: "1"
+      HIP_VISIBLE_DEVICES: ${HIP_VISIBLE_DEVICES:-0}
+  minicpm-v:
+    <<: *rocm
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+      HIP_VISIBLE_DEVICES: ${HIP_VISIBLE_DEVICES:-0}

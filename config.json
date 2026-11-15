@@ -1,0 +1,114 @@
+{
+  "app": {
+    "name": "Critical Thinking Enhancer",
+    "tagline": "Cognitive trainer for student developers",
+    "author": "Dhurjati Sharma",
+    "vercel_url": "https://my-website-three-mu-29.vercel.app/",
+    "ai_server_repo": "https://github.com/DHURJATI-JS/ai-server-v2",
+    "host": "0.0.0.0",
+    "port": 8010,
+    "max_upload_mb": 20,
+    "list_profiles_on_signin": true,
+    "single_active_user": true,
+    "lock_heartbeat_seconds": 90,
+    "lock_idle_minutes": 30,
+    "secret_key": "${CTE_SECRET_KEY:-}"
+  },
+  "database": {
+    "url": "postgresql+asyncpg://${CTE_DB_USER:-cte}:${CTE_DB_PASSWORD:-cte_local_dev}@127.0.0.1:${CTE_DB_PORT:-5440}/${CTE_DB_NAME:-cte}",
+    "pool_size": 10,
+    "max_overflow": 20
+  },
+  "redis": {
+    "enabled": true,
+    "url": "redis://127.0.0.1:${CTE_REDIS_PORT:-6380}/0"
+  },
+  "ai": {
+    "gateway": {
+      "label": "AI Gateway (OpenAI SDK)",
+      "base_url": "${CTE_GATEWAY_URL:-http://127.0.0.1:4000/v1}",
+      "api_key": "${CTE_GATEWAY_API_KEY:-}",
+      "model": "${CTE_GATEWAY_MODEL:-gateway-default}",
+      "timeout_seconds": 180,
+      "max_concurrency": "${CTE_GATEWAY_MAX_CONCURRENCY:-4}",
+      "adaptive_concurrency": true,
+      "concurrency_ceiling": 16,
+      "max_retries": 3,
+      "supports_json_mode": true,
+      "supports_logprobs": false,
+      "send_reasoning_effort": false
+    },
+    "coder": {
+      "label": "Qwen Coder - ${CTE_CODER_ENGINE:-vLLM (Docker, GPU)}",
+      "base_url": "${CTE_CODER_URL:-http://127.0.0.1:8011/v1}",
+      "api_key": "${CTE_VLLM_API_KEY:-local-vllm-key}",
+      "model": "${CTE_CODER_MODEL:-qwen-coder}",
+      "timeout_seconds": 180,
+      "supports_json_mode": true,
+      "supports_logprobs": true,
+      "send_reasoning_effort": false
+    },
+    "vision": {
+      "label": "MiniCPM-V - ${CTE_VISION_ENGINE:-vLLM (Docker, GPU)}",
+      "base_url": "${CTE_VISION_URL:-http://127.0.0.1:8012/v1}",
+      "api_key": "${CTE_VLLM_API_KEY:-local-vllm-key}",
+      "model": "${CTE_VISION_MODEL:-minicpm-v}",
+      "temperature": 0.05,
+      "timeout_seconds": 120,
+      "enabled": "${CTE_VISION_ENABLED:-auto}"
+    },
+    "fallback": {
+      "anthropic_base_url": "https://api.anthropic.com",
+      "anthropic_model": "claude-sonnet-5-5",
+      "openai_base_url": "https://api.openai.com/v1",
+      "openai_model": "gpt-5-mini",
+      "timeout_seconds": 120
+    },
+    "health_interval_seconds": 5,
+    "health_timeout_seconds": 4,
+    "confidence_threshold": 0.65,
+    "confidence_max_retries": 2,
+    "blocked_local_model_keywords": ["gemma"]
+  },
+  "embeddings": {
+    "provider": "fastembed",
+    "model": "BAAI/bge-small-en-v1.5",
+    "dim": 384,
+    "base_url": "",
+    "api_key": ""
+  },
+  "ocr": {
+    "layers": ["tesseract", "rapidocr", "system", "vision_llm"],
+    "use_system_ocr": true,
+    "vision_llm_when_system_unavailable": true,
+    "vision_llm_as_last_resort": true,
+    "accept_confidence": 0.65,
+    "tesseract_cmd": ""
+  },
+  "workers": {
+    "concurrency": 6,
+    "job_timeout_seconds": 600
+  },
+  "spam": {
+    "chat_per_minute": 12,
+    "upload_per_minute": 6,
+    "onboard_per_10min": 6,
+    "block_threshold": 0.8,
+    "ai_check_threshold": 0.45,
+    "mute_after_blocks": 5,
+    "mute_seconds": 120,
+    "max_message_chars": 6000
+  },
+  "levels": {
+    "max_declines_before_lock": 3,
+    "turns_between_offers": 3
+  },
+  "security": {
+    "force_https": false,
+    "hsts_max_age": 31536000,
+    "hsts_include_subdomains": true,
+    "csp_report_only": false,
+    "referrer_policy": "same-origin",
+    "frame_options": "DENY"
+  }
+}

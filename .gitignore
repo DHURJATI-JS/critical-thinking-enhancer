@@ -1,0 +1,23 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Secrets & local runtime data (database lives in Docker volumes)
+.env
+.runtime/
+
+# Downloaded by the installers (Tailwind CLI, Icons8 icons, Line Awesome, fonts) - not redistributed
+app/static/vendor/
+
+# Optional: the AI server repo cloned by the installer
+ai-server/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/

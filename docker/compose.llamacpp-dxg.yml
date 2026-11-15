@@ -1,0 +1,23 @@
+# Qwen coder (and MiniCPM-V) on ANY GPU (AMD / NVIDIA / Intel) inside Docker Desktop on Windows:
+# llama.cpp Vulkan backend -> Mesa Dozen (Vulkan on Direct3D 12) -> WSL2 GPU paravirtualisation (/dev/dxg).
+# Used automatically by scripts/install.ps1 when vLLM has no GPU support (e.g. AMD Radeon on Windows).
+#
+# Paths in an override file are resolved from the project directory (the folder of the FIRST compose file,
+# i.e. the repository root), so the build context is ./docker.
+services:
+  qwen-coder-llama:
+    image: ${LLAMACPP_IMAGE:-cte-llamacpp-dozen:latest}
+    build:
+      context: ./docker
+      dockerfile: llamacpp-dozen.Dockerfile
+    devices:
+      - /dev/dxg
+    volumes:
+      - /usr/lib/wsl:/usr/lib/wsl:ro
+
+  minicpm-v-llama:
+    image: ${LLAMACPP_IMAGE:-cte-llamacpp-dozen:latest}  # built by qwen-coder-llama above
+    devices:
+      - /dev/dxg
+    volumes:
+      - /usr/lib/wsl:/usr/lib/wsl:ro

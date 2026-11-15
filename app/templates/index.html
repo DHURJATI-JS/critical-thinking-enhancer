@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Critical Thinking Enhancer</title>
+  <meta name="description" content="A local-first cognitive trainer for student developers: logic, analytical & critical thinking, metacognition and bug foresight.">
+  <!-- rendered per request: this browser's CSRF token (sent back as X-CSRF-Token) and a fresh CSP nonce -->
+  <meta name="csrf-token" content="__CSRF_TOKEN__">
+  <link rel="icon" href="/static/img/logo.svg" type="image/svg+xml">
+  <script nonce="__CSP_NONCE__" src="/static/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/static/vendor/line-awesome/css/line-awesome.min.css">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <script nonce="__CSP_NONCE__" type="module" src="/static/js/app.js"></script>
+</head>
+<body class="min-h-screen font-sans antialiased">
+  <div class="bg-orbs" aria-hidden="true"></div>
+
+  <header id="app-header" class="sticky top-0 z-30 border-b border-[color:var(--border)] bg-[color:var(--bg)]/80 backdrop-blur-xl"></header>
+  <div id="banners" class="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 pt-3 empty:hidden sm:px-6"></div>
+
+  <main id="view" class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
+    <div class="grid min-h-[60vh] place-items-center">
+      <div class="flex items-center gap-3 text-2">
+        <span class="typing"><span></span><span></span><span></span></span>
+        <span class="font-mono text-sm">booting cognitive engine...</span>
+      </div>
+    </div>
+    <noscript><p class="card mt-6">This app needs JavaScript enabled.</p></noscript>
+  </main>
+
+  <footer id="app-footer" class="site-footer mt-12"></footer>
+  <div id="modal-root"></div>
+  <div id="toast-root" role="status" aria-live="polite" class="pointer-events-none fixed bottom-4 right-4 z-50 flex w-[min(92vw,380px)] flex-col gap-2"></div>
+  <canvas id="confetti" class="pointer-events-none fixed inset-0 z-[60] hidden"></canvas>
+</body>
+</html>

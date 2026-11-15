@@ -1,0 +1,19 @@
+# NVIDIA GPUs (Windows: Docker Desktop + WSL2 with a current NVIDIA driver;
+# Linux: nvidia-container-toolkit). Selected automatically by the installers via COMPOSE_FILE.
+services:
+  qwen-coder:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+  minicpm-v:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

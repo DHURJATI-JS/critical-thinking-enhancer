@@ -1,0 +1,40 @@
+{
+  "app": {
+    "name": "Critical Thinking Enhancer (TEST)",
+    "author": "Test Runner",
+    "vercel_url": "<your-vercel-url>",
+    "ai_server_repo": "<ai_server_repo>",
+    "host": "127.0.0.1",
+    "port": 8020,
+    "max_upload_mb": 20
+  },
+  "database": {
+    "url": "postgresql+asyncpg://${CTE_DB_USER:-cte}:${CTE_DB_PASSWORD:-cte_local_dev}@127.0.0.1:${CTE_DB_PORT:-5440}/cte_test",
+    "pool_size": 15,
+    "max_overflow": 30
+  },
+  "redis": { "enabled": true, "url": "redis://127.0.0.1:${CTE_REDIS_PORT:-6380}/1" },
+  "ai": {
+    "gateway": { "label": "Mock gateway", "base_url": "http://127.0.0.1:9102/v1", "api_key": "mock", "model": "mock-gateway", "timeout_seconds": 60, "supports_logprobs": false, "max_concurrency": 2, "adaptive_concurrency": true },
+    "coder": { "label": "Mock Qwen coder", "base_url": "http://127.0.0.1:9102/v1", "api_key": "mock", "model": "mock-coder", "timeout_seconds": 60, "supports_logprobs": true },
+    "vision": { "label": "Mock MiniCPM-V", "base_url": "http://127.0.0.1:9102/v1", "api_key": "mock", "model": "mock-vision", "temperature": 0.05, "timeout_seconds": 60, "enabled": "auto" },
+    "health_interval_seconds": 5,
+    "health_timeout_seconds": 4,
+    "confidence_threshold": 0.65,
+    "confidence_max_retries": 2
+  },
+  "embeddings": { "provider": "fastembed", "model": "BAAI/bge-small-en-v1.5", "dim": 384 },
+  "ocr": { "layers": ["tesseract", "rapidocr", "system", "vision_llm"], "use_system_ocr": true, "accept_confidence": 0.65 },
+  "workers": { "concurrency": 8, "job_timeout_seconds": 240 },
+  "spam": {
+    "chat_per_minute": 40,
+    "upload_per_minute": 40,
+    "onboard_per_10min": 200,
+    "block_threshold": 0.8,
+    "ai_check_threshold": 0.45,
+    "mute_after_blocks": 3,
+    "mute_seconds": 30,
+    "max_message_chars": 6000
+  },
+  "levels": { "max_declines_before_lock": 3, "turns_between_offers": 3 }
+}

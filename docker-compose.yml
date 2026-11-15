@@ -1,0 +1,156 @@
+# Critical Thinking Enhancer - local infrastructure
+#
+#   postgres     : PostgreSQL 17 + pgvector (always on)
+#   redis        : rate limits / spam mutes + pub/sub worker wake-ups (optional at runtime)
+#   qwen-coder       : vLLM server running a Qwen2.5-Coder model                    (profile: coder)
+#   qwen-coder-llama : the same role on llama.cpp (AMD on Windows: Vulkan via Dozen) (profile: coder-llamacpp)
+#   minicpm-v        : vLLM server running MiniCPM-V (last OCR layer)               (profile: vision)
+#   minicpm-v-llama  : the same role on llama.cpp                                    (profile: vision-llamacpp)
+# Models only ever run on the GPU.
+#
+# GPU vendor specifics live in docker/compose.<vendor>.yml and are selected
+# automatically by scripts/install.ps1 / scripts/install.sh (see .env.docker).
+# Everything except the web app is bound to 127.0.0.1 so it is NOT exposed to the LAN.
+
+name: cte
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: cte-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${CTE_DB_USER:-cte}
+      POSTGRES_PASSWORD: ${CTE_DB_PASSWORD:-cte_local_dev}
+      POSTGRES_DB: ${CTE_DB_NAME:-cte}
+    ports:
+      - "127.0.0.1:${CTE_DB_PORT:-5440}:5432"
+    volumes:
+      - cte_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: cte-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "127.0.0.1:${CTE_REDIS_PORT:-6380}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  qwen-coder:
+    profiles: ["coder"]
+    image: ${VLLM_IMAGE:-vllm/vllm-openai:latest}
+    container_name: cte-qwen-coder
+    restart: unless-stopped
+    ipc: host
+    ports:
+      - "127.0.0.1:${CTE_CODER_PORT:-8011}:8000"
+    volumes:
+      - cte_hf_cache:/root/.cache/huggingface
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+      VLLM_CPU_KVCACHE_SPACE: ${VLLM_CPU_KVCACHE_SPACE:-8}
+    command: >
+      --model ${QWEN_CODER_MODEL:-Qwen/Qwen2.5-Coder-7B-Instruct-AWQ}
+      --served-model-name qwen-coder
+      --max-model-len ${CODER_MAX_MODEL_LEN:-16384}
+      --gpu-memory-utilization ${CODER_GPU_UTIL:-0.55}
+      --api-key ${CTE_VLLM_API_KEY:-local-vllm-key}
+      ${CODER_EXTRA_ARGS:-}
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=3)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 80
+      start_period: 120s
+
+  # Same Qwen coder role on llama.cpp - used where vLLM has no GPU support (e.g. AMD on Windows,
+  # Intel, CPU-only, macOS). llama.cpp supports NVIDIA (CUDA), AMD (ROCm / Vulkan) and CPU.
+  # GPU overlays: docker/compose.llamacpp-*.yml (selected by the installers).
+  qwen-coder-llama:
+    profiles: ["coder-llamacpp"]
+    image: ${LLAMACPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:server}
+    container_name: cte-qwen-coder-llama
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${CTE_CODER_PORT:-8011}:8000"
+    volumes:
+      - cte_llama_cache:/root/.cache/llama.cpp
+    environment:
+      LLAMA_CACHE: /root/.cache/llama.cpp
+      HF_TOKEN: ${HF_TOKEN:-}
+    command: >
+      -hf ${QWEN_CODER_GGUF:-Qwen/Qwen2.5-Coder-3B-Instruct-GGUF:Q4_K_M}
+      --alias qwen-coder
+      --host 0.0.0.0 --port 8000
+      --ctx-size ${CODER_MAX_MODEL_LEN:-16384}
+      --parallel ${CODER_PARALLEL:-2}
+      --n-gpu-layers ${CODER_GPU_LAYERS:-99}
+      --jinja
+      --api-key ${CTE_VLLM_API_KEY:-local-vllm-key}
+
+  # MiniCPM-V (last OCR layer) on llama.cpp - the GPU route where vLLM cannot reach the GPU (AMD on Windows).
+  # Same image as qwen-coder-llama (build it there first); llama.cpp's multimodal server downloads the model
+  # AND its vision projector (mmproj) from the -hf repository.
+  minicpm-v-llama:
+    profiles: ["vision-llamacpp"]
+    image: ${LLAMACPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:server}
+    container_name: cte-minicpm-v-llama
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${CTE_VISION_PORT:-8012}:8000"
+    volumes:
+      - cte_llama_cache:/root/.cache/llama.cpp
+    environment:
+      LLAMA_CACHE: /root/.cache/llama.cpp
+      HF_TOKEN: ${HF_TOKEN:-}
+    command: >
+      -hf ${VISION_GGUF:-openbmb/MiniCPM-V-2_6-gguf:Q4_K_M}
+      --alias minicpm-v
+      --host 0.0.0.0 --port 8000
+      --ctx-size ${VISION_MAX_MODEL_LEN:-4096}
+      --parallel 1
+      --n-gpu-layers ${VISION_GPU_LAYERS:-99}
+      --api-key ${CTE_VLLM_API_KEY:-local-vllm-key}
+
+  minicpm-v:
+    profiles: ["vision"]
+    image: ${VLLM_IMAGE:-vllm/vllm-openai:latest}
+    container_name: cte-minicpm-v
+    restart: unless-stopped
+    ipc: host
+    ports:
+      - "127.0.0.1:${CTE_VISION_PORT:-8012}:8000"
+    volumes:
+      - cte_hf_cache:/root/.cache/huggingface
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+      VLLM_CPU_KVCACHE_SPACE: ${VLLM_CPU_KVCACHE_SPACE:-4}
+    command: >
+      --model ${VISION_MODEL:-openbmb/MiniCPM-V-2_6}
+      --served-model-name minicpm-v
+      --trust-remote-code
+      --max-model-len ${VISION_MAX_MODEL_LEN:-4096}
+      --gpu-memory-utilization ${VISION_GPU_UTIL:-0.35}
+      --api-key ${CTE_VLLM_API_KEY:-local-vllm-key}
+      ${VISION_EXTRA_ARGS:-}
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=3)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 80
+      start_period: 120s
+
+volumes:
+  cte_pgdata:
+  cte_hf_cache:
+  cte_llama_cache:
