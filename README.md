@@ -383,5 +383,5 @@ Colour icons by **[Icons8](https://icons8.com)**, and the icon font [Line Awesom
 
 ## License
 
-[MIT](LICENSE). Provided **as is**, without warranty and without liability.
+[MIT](LICENSE). Provided **as is**, without warranty and without liability. See [DISCLAIMER.md](DISCLAIMER.md).
 This is a student-grade learning project: **not** a medical, psychological or clinical tool, and **not** an IQ test.
